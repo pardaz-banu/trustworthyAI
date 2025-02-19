@@ -1,18 +1,14 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, LayerNormalization, Dropout
-from tensorflow.keras import layers
-from tensorflow import distributions as distr
-
-# Assuming TransformerEncoder is a Keras-based implementation or similar.
+import tensorflow_probability as tfp
 
 def multihead_attention(inputs, num_units=None, num_heads=16, dropout_rate=0.1, is_training=True):
     # Multihead Attention implementation using TensorFlow 2.x API
     batch_size, seq_length, _ = inputs.shape
     
     # Linear projections
-    Q = Dense(num_units, activation=tf.nn.relu)(inputs)  # [batch_size, seq_length, n_hidden]
-    K = Dense(num_units, activation=tf.nn.relu)(inputs)  # [batch_size, seq_length, n_hidden]
-    V = Dense(num_units, activation=tf.nn.relu)(inputs)  # [batch_size, seq_length, n_hidden]
+    Q = tf.keras.layers.Dense(num_units, activation=tf.nn.relu)(inputs)  # [batch_size, seq_length, n_hidden]
+    K = tf.keras.layers.Dense(num_units, activation=tf.nn.relu)(inputs)  # [batch_size, seq_length, n_hidden]
+    V = tf.keras.layers.Dense(num_units, activation=tf.nn.relu)(inputs)  # [batch_size, seq_length, n_hidden]
     
     # Split and concat
     Q_ = tf.concat(tf.split(Q, num_heads, axis=2), axis=0)  # [num_heads * batch_size, seq_length, n_hidden/num_heads]
@@ -27,7 +23,7 @@ def multihead_attention(inputs, num_units=None, num_heads=16, dropout_rate=0.1, 
     outputs = tf.nn.softmax(outputs)
 
     # Dropout
-    outputs = Dropout(dropout_rate)(outputs, training=is_training)
+    outputs = tf.keras.layers.Dropout(dropout_rate)(outputs, training=is_training)
     
     # Weighted sum of values
     outputs = tf.matmul(outputs, V_)  # [num_heads * batch_size, seq_length, n_hidden/num_heads]
@@ -39,17 +35,17 @@ def multihead_attention(inputs, num_units=None, num_heads=16, dropout_rate=0.1, 
     outputs = outputs + inputs  # [batch_size, seq_length, n_hidden]
 
     # Normalize
-    outputs = LayerNormalization(axis=-1)(outputs)
+    outputs = tf.keras.layers.LayerNormalization(axis=-1)(outputs)
 
     return outputs
 
 
 def feedforward(inputs, num_units=[2048, 512], is_training=True):
     # Feedforward network using Keras layers
-    x = Dense(num_units[0], activation=tf.nn.relu)(inputs)
-    x = Dense(num_units[1], activation=tf.nn.relu)(x)
+    x = tf.keras.layers.Dense(num_units[0], activation=tf.nn.relu)(inputs)
+    x = tf.keras.layers.Dense(num_units[1], activation=tf.nn.relu)(x)
     x = x + inputs  # Residual connection
-    x = LayerNormalization(axis=-1)(x)  # Normalize
+    x = tf.keras.layers.LayerNormalization(axis=-1)(x)  # Normalize
     return x
 
 
@@ -65,7 +61,7 @@ class TransformerDecoder(tf.keras.Model):
         self.is_training = is_train
 
         # Initialize embedding layer and attention/ffn stacks
-        self.embedding_layer = Dense(self.input_embed, activation=tf.nn.relu, kernel_initializer=self.initializer)
+        self.embedding_layer = tf.keras.layers.Dense(self.input_embed, activation=tf.nn.relu, kernel_initializer=self.initializer)
         self.attention_blocks = [multihead_attention for _ in range(self.num_stacks)]
         self.ffn_blocks = [feedforward for _ in range(self.num_stacks)]
         
@@ -84,7 +80,7 @@ class TransformerDecoder(tf.keras.Model):
             enc = self.ffn_blocks[i](enc, num_units=[self.input_embed, self.input_embed], is_training=self.is_training)
         
         # Readout layer
-        adj_prob = Dense(self.max_length, activation=None)(enc)
+        adj_prob = tf.keras.layers.Dense(self.max_length, activation=None)(enc)
 
         samples = []
         mask_scores = []
@@ -96,7 +92,7 @@ class TransformerDecoder(tf.keras.Model):
             mask = tf.one_hot(position, self.max_length)
 
             masked_score = adj_prob[:, i, :] - 1e8 * mask
-            prob = distr.Bernoulli(logits=masked_score)
+            prob = tfp.distributions.Bernoulli(logits=masked_score)
             sampled_arr = prob.sample()
 
             samples.append(sampled_arr)
