@@ -1,6 +1,5 @@
 import tensorflow as tf
-from tensorflow.contrib import distributions as distr
-
+import tensorflow_probability as tfp  # For Bernoulli distribution
 
 class BilinearDecoder(object):
 
@@ -10,7 +9,7 @@ class BilinearDecoder(object):
         self.input_dimension = config.hidden_dim
         self.input_embed = config.hidden_dim    # dimension of embedding space (actor)
         self.max_length = config.max_length
-        self.initializer = tf.contrib.layers.xavier_initializer() # variables initializer
+        self.initializer = tf.keras.initializers.GlorotUniform()  # Xavier initializer equivalent
         self.use_bias = config.use_bias
         self.bias_initial_value = config.bias_initial_value
         self.use_bias_constant = config.use_bias_constant
@@ -31,9 +30,9 @@ class BilinearDecoder(object):
         if self.bias_initial_value is None:    # Randomly initialize the learnable bias
             self.logit_bias = tf.get_variable('logit_bias', [1])
         elif self.use_bias_constant:    # Constant bias
-            self.logit_bias =  tf.constant([self.bias_initial_value], tf.float32, name='logit_bias')
+            self.logit_bias = tf.constant([self.bias_initial_value], tf.float32, name='logit_bias')
         else:    # Learnable bias with initial value
-            self.logit_bias =  tf.Variable([self.bias_initial_value], tf.float32, name='logit_bias')
+            self.logit_bias = tf.Variable([self.bias_initial_value], tf.float32, name='logit_bias')
 
         if self.use_bias:    # Bias to control sparsity/density
             logits += self.logit_bias
@@ -48,9 +47,9 @@ class BilinearDecoder(object):
             self.mask = tf.one_hot(position, self.max_length)
 
             masked_score = self.adj_prob[:,i,:] - 100000000.*self.mask
-            prob = distr.Bernoulli(masked_score)    # probs input probability, logit input log_probability
+            prob = tfp.distributions.Bernoulli(logits=masked_score)    # probs input probability, logits input log_probability
 
-            sampled_arr = prob.sample()    # Batch_size, seqlenght for just one node
+            sampled_arr = prob.sample()    # Batch_size, seq_length for just one node
 
             self.samples.append(sampled_arr)
             self.mask_scores.append(masked_score)
