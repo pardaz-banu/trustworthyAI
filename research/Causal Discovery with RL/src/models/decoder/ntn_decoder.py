@@ -1,6 +1,5 @@
 import tensorflow as tf
-from tensorflow.contrib import distributions as distr
-
+import tensorflow_probability as tfp  # For Bernoulli distribution
 
 class NTNDecoder(object):
 
@@ -11,7 +10,7 @@ class NTNDecoder(object):
         self.input_embed = config.hidden_dim    # dimension of embedding space (actor)
         self.max_length = config.max_length
         self.decoder_hidden_dim = config.decoder_hidden_dim
-        self.initializer = tf.contrib.layers.xavier_initializer() # variables initializer
+        self.initializer = tf.keras.initializers.GlorotUniform()  # Xavier initializer equivalent
         self.decoder_activation = config.decoder_activation
         self.use_bias = config.use_bias
         self.bias_initial_value = config.bias_initial_value
@@ -26,14 +25,11 @@ class NTNDecoder(object):
     def decode(self, encoder_output):
         # encoder_output is a tensor of size [batch_size, max_length, input_embed]
         with tf.variable_scope('ntn'):
-            W = tf.get_variable('bilinear_weights', [self.input_embed, self.input_embed, self.decoder_hidden_dim],
-                                initializer=self.initializer)
-            W_l = tf.get_variable('weights_left', [self.input_embed, self.decoder_hidden_dim],
-                                  initializer=self.initializer)
-            W_r = tf.get_variable('weights_right', [self.input_embed, self.decoder_hidden_dim],
-                                  initializer=self.initializer)
-            U = tf.get_variable('U', [self.decoder_hidden_dim], initializer=self.initializer)
-            B = tf.get_variable('bias', [self.decoder_hidden_dim], initializer=self.initializer)
+            W = tf.Variable(self.initializer([self.input_embed, self.input_embed, self.decoder_hidden_dim]), name="bilinear_weights")
+            W_l = tf.Variable(self.initializer([self.input_embed, self.decoder_hidden_dim]), name="weights_left")
+            W_r = tf.Variable(self.initializer([self.input_embed, self.decoder_hidden_dim]), name="weights_right")
+            U = tf.Variable(self.initializer([self.decoder_hidden_dim]), name="U")
+            B = tf.Variable(self.initializer([self.decoder_hidden_dim]), name="bias")
 
         # Compute linear output with shape (batch_size, max_length, max_length, decoder_hidden_dim)
         dot_l = tf.einsum('ijk, kl->ijl', encoder_output, W_l)
@@ -57,11 +53,11 @@ class NTNDecoder(object):
         logits = tf.einsum('ijkl, l->ijk', final_sum, U)    # Readability
 
         if self.bias_initial_value is None:    # Randomly initialize the learnable bias
-            self.logit_bias = tf.get_variable('logit_bias', [1])
+            self.logit_bias = tf.Variable(tf.zeros([1]), name="logit_bias")
         elif self.use_bias_constant:    # Constant bias
-            self.logit_bias =  tf.constant([self.bias_initial_value], tf.float32, name='logit_bias')
+            self.logit_bias = tf.constant([self.bias_initial_value], tf.float32, name="logit_bias")
         else:    # Learnable bias with initial value
-            self.logit_bias =  tf.Variable([self.bias_initial_value], tf.float32, name='logit_bias')
+            self.logit_bias = tf.Variable([self.bias_initial_value], tf.float32, name="logit_bias")
 
         if self.use_bias:    # Bias to control sparsity/density
             logits += self.logit_bias
@@ -76,9 +72,9 @@ class NTNDecoder(object):
             self.mask = tf.one_hot(position, self.max_length)
 
             masked_score = self.adj_prob[:,i,:] - 100000000.*self.mask
-            prob = distr.Bernoulli(masked_score)    # probs input probability, logit input log_probability
+            prob = tfp.distributions.Bernoulli(logits=masked_score)    # probs input probability, logits input log_probability
 
-            sampled_arr = prob.sample()    # Batch_size, seqlenght for just one node
+            sampled_arr = prob.sample()    # Batch_size, seq_length for just one node
 
             self.samples.append(sampled_arr)
             self.mask_scores.append(masked_score)
