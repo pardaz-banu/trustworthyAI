@@ -61,7 +61,7 @@ def main():
     create_dir(config.graph_dir)
 
     # Reproducibility
-    tf.random.set_seed(seed)
+    tf.random.set_seed(config.seed)
 
 
     # Log the configuration parameters

@@ -1,0 +1,13 @@
+2025-02-21 02:16:48,347 INFO - helpers.log_helper - Completed configuring logger.
+2025-02-21 02:16:48,347 INFO - __main__ - Python version is 3.12.7
+2025-02-21 02:16:48,347 INFO - __main__ - Current commit of code: ___
+2025-02-21 02:16:48,347 CRITICAL - helpers.log_helper - Unhandled exception
+Traceback (most recent call last):
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/main.py", line 315, in <module>
+    main()
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/main.py", line 64, in main
+    tf.random.set_seed(seed)
+                       ^^^^
+NameError: name 'seed' is not defined
+2025-02-21 02:16:48,431 INFO - rpy2.rinterface_lib.embedded - Embedded R ended.
+2025-02-21 02:16:48,431 INFO - rpy2.rinterface_lib.embedded - Embedded R already ended.
