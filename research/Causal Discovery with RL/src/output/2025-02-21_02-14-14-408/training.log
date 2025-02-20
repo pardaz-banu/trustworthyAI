@@ -1,0 +1,15 @@
+2025-02-21 02:14:14,408 INFO - helpers.log_helper - Completed configuring logger.
+2025-02-21 02:14:14,409 INFO - __main__ - Python version is 3.12.7
+2025-02-21 02:14:14,409 INFO - __main__ - Current commit of code: ___
+2025-02-21 02:14:14,409 CRITICAL - helpers.log_helper - Unhandled exception
+Traceback (most recent call last):
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/main.py", line 314, in <module>
+    main()
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/main.py", line 64, in main
+    set_seed(config.seed)
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/helpers/tf_utils.py", line 18, in set_seed
+    tf.set_random_seed(seed)
+    ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'tensorflow' has no attribute 'set_random_seed'
+2025-02-21 02:14:14,495 INFO - rpy2.rinterface_lib.embedded - Embedded R ended.
+2025-02-21 02:14:14,495 INFO - rpy2.rinterface_lib.embedded - Embedded R already ended.

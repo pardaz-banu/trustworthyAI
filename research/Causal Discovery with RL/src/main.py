@@ -61,7 +61,8 @@ def main():
     create_dir(config.graph_dir)
 
     # Reproducibility
-    set_seed(config.seed)
+    tf.random.set_seed(seed)
+
 
     # Log the configuration parameters
     _logger.info('Configuration parameters: {}'.format(vars(config)))    # Use vars to convert config to dict for logging
