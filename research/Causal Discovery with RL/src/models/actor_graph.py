@@ -49,10 +49,11 @@ class Actor(object):
         self.lr2_decay_step = config.lr1_decay_step  # learning rate decay step
 
         # Tensor block holding the input sequences [Batch Size, Sequence Length, Features]
-        self.input_ = tf.placeholder(tf.float32, [self.batch_size, self.max_length, self.input_dimension],
-                                     name="input_coordinates")
-        self.reward_ = tf.placeholder(tf.float32, [self.batch_size], name='input_rewards')
-        self.graphs_ = tf.placeholder(tf.float32, [self.batch_size, self.max_length, self.max_length], name='input_graphs')
+        # TensorFlow 2.x code
+        self.input_ = tf.keras.Input(shape=(self.max_length, self.input_dimension))  # If using Keras API
+
+        self.reward_ = tf.keras.Input(shape=(self.batch_size,), dtype=tf.float32, name='input_rewards')
+        self.graphs_ = tf.keras.Input(shape=(self.batch_size, self.max_length, self.max_length), dtype=tf.float32, name='input_graphs')
 
         self.build_permutation()
         self.build_critic()
