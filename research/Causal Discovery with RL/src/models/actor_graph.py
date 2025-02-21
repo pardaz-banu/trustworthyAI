@@ -71,7 +71,8 @@ class Actor(tf.keras.Model):  # Update to inherit from tf.keras.Model for easier
         else:
             raise NotImplementedError('Current encoder type is not implemented yet!')
 
-        self.encoder_output = encoder.encode(self.input_)
+    # Use the encoder directly, which will call the 'call' method internally
+        self.encoder_output = encoder(self.input_)
 
         if self.config.decoder_type == 'SingleLayerDecoder':
             self.decoder = SingleLayerDecoder(self.config, self.is_train)
