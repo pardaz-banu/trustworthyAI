@@ -85,7 +85,7 @@ class Actor(tf.keras.Model):  # Update to inherit from tf.keras.Model for easier
         else:
             raise NotImplementedError('Current decoder type is not implemented yet!')
 
-        self.samples, self.scores, self.entropy = self.decoder.decode(self.encoder_output)
+        self.samples, self.scores, self.entropy = self.decoder(self.encoder_output)
 
         graphs_gen = tf.transpose(tf.stack(self.samples), [1, 0, 2])
 
