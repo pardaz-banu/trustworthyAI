@@ -1,8 +1,11 @@
 import tensorflow as tf
+from tensorflow.keras import layers
 
-class SingleLayerDecoder(object):
-
-    def __init__(self, config, is_train):
+class SingleLayerDecoder(layers.Layer):
+    def __init__(self, config, is_train, **kwargs):
+        super(SingleLayerDecoder, self).__init__(**kwargs)
+        
+        # Initialize configuration variables
         self.batch_size = config.batch_size    # batch size
         self.max_length = config.max_length    # input sequence length (number of cities)
         self.input_dimension = config.hidden_dim
@@ -20,44 +23,59 @@ class SingleLayerDecoder(object):
         self.mask_scores = []
         self.entropy = []
 
-    def decode(self, encoder_output):
-        # encoder_output is a tensor of size [batch_size, max_length, input_embed]
-        
-        # Variable initialization using tf.keras
-        W_l = tf.Variable(tf.keras.initializers.GlorotUniform()(shape=[self.input_embed, self.decoder_hidden_dim]), name='weights_left')
-        W_r = tf.Variable(tf.keras.initializers.GlorotUniform()(shape=[self.input_embed, self.decoder_hidden_dim]), name='weights_right')
-        U = tf.Variable(tf.keras.initializers.GlorotUniform()(shape=[self.decoder_hidden_dim]), name='U')  # Aggregate across decoder hidden dim
+        # Weights are now initialized inside the `build()` method (Keras' recommended way)
+        self.W_l = None
+        self.W_r = None
+        self.U = None
+        self.logit_bias = None
 
+    def build(self, input_shape):
+        # Initialize weights here using the Keras API
+        self.W_l = self.add_weight(
+            name='weights_left', shape=[self.input_embed, self.decoder_hidden_dim], 
+            initializer=tf.keras.initializers.GlorotUniform())
+        self.W_r = self.add_weight(
+            name='weights_right', shape=[self.input_embed, self.decoder_hidden_dim], 
+            initializer=tf.keras.initializers.GlorotUniform())
+        self.U = self.add_weight(
+            name='U', shape=[self.decoder_hidden_dim], 
+            initializer=tf.keras.initializers.GlorotUniform())
+        
+        # Bias handling
+        if self.bias_initial_value is None:
+            self.logit_bias = self.add_weight(
+                name='logit_bias', shape=[1], initializer=tf.zeros_initializer())
+        elif self.use_bias_constant:
+            self.logit_bias = self.add_weight(
+                name='logit_bias', shape=[1], initializer=tf.constant_initializer(self.bias_initial_value))
+        else:
+            self.logit_bias = self.add_weight(
+                name='logit_bias', shape=[1], initializer=tf.keras.initializers.GlorotUniform())
+
+    def call(self, encoder_output):
         # Compute dot products
-        dot_l = tf.einsum('ijk, kl->ijl', encoder_output, W_l)
-        dot_r = tf.einsum('ijk, kl->ijl', encoder_output, W_r)
+        dot_l = tf.einsum('ijk, kl->ijl', encoder_output, self.W_l)
+        dot_r = tf.einsum('ijk, kl->ijl', encoder_output, self.W_r)
 
         # Tiling the dot products for element-wise addition
         tiled_l = tf.tile(tf.expand_dims(dot_l, axis=2), (1, 1, self.max_length, 1))
         tiled_r = tf.tile(tf.expand_dims(dot_r, axis=1), (1, self.max_length, 1, 1))
 
         # Apply activation function based on user input
-        if self.decoder_activation == 'tanh':    # Original implementation by paper
+        if self.decoder_activation == 'tanh':
             final_sum = tf.nn.tanh(tiled_l + tiled_r)
         elif self.decoder_activation == 'relu':
             final_sum = tf.nn.relu(tiled_l + tiled_r)
-        elif self.decoder_activation == 'none':    # Without activation function
+        elif self.decoder_activation == 'none':
             final_sum = tiled_l + tiled_r
         else:
             raise NotImplementedError('Current decoder activation is not implemented yet')
 
         # final_sum is of shape (batch_size, max_length, max_length, decoder_hidden_dim)
-        logits = tf.einsum('ijkl, l->ijk', final_sum, U)    # Readability
+        logits = tf.einsum('ijkl, l->ijk', final_sum, self.U)
 
         # Bias handling
-        if self.bias_initial_value is None:    # Randomly initialize the learnable bias
-            self.logit_bias = tf.Variable(tf.zeros([1]), name='logit_bias')
-        elif self.use_bias_constant:    # Constant bias
-            self.logit_bias = tf.constant([self.bias_initial_value], dtype=tf.float32, name='logit_bias')
-        else:    # Learnable bias with initial value
-            self.logit_bias = tf.Variable([self.bias_initial_value], dtype=tf.float32, name='logit_bias')
-
-        if self.use_bias:    # Bias to control sparsity/density
+        if self.use_bias:
             logits += self.logit_bias
 
         self.adj_prob = logits
@@ -70,10 +88,10 @@ class SingleLayerDecoder(object):
             # Update mask
             self.mask = tf.one_hot(position, self.max_length)
 
-            masked_score = self.adj_prob[:,i,:] - 100000000.*self.mask
-            prob = tf.distributions.Bernoulli(logits=masked_score)    # probs input probability, logit input log_probability
+            masked_score = self.adj_prob[:, i, :] - 100000000. * self.mask
+            prob = tf.distributions.Bernoulli(logits=masked_score)  # probs input probability, logit input log_probability
 
-            sampled_arr = prob.sample()    # Batch_size, sequence_length for just one node
+            sampled_arr = prob.sample()  # Batch_size, sequence_length for just one node
 
             self.samples.append(sampled_arr)
             self.mask_scores.append(masked_score)
