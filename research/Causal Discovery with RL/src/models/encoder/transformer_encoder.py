@@ -75,12 +75,21 @@ class TransformerEncoder(tf.keras.layers.Layer):
         self.num_stacks = config.num_stacks
         self.initializer = tf.keras.initializers.GlorotUniform()  # variables initializer
         self.is_training = is_train  # not config.inference_mode
+        self.W_embed = None  # will initialize this in `build()` method
+
+    def build(self, input_shape):
+        # Initialize weights in the `build` method
+        self.W_embed = self.add_weight(
+            name="weights", 
+            shape=[1, self.input_dimension, self.input_embed], 
+            initializer=self.initializer
+        )
+        super(TransformerEncoder, self).build(input_shape)
 
     def call(self, inputs):
         with tf.name_scope("embedding"):
-            # Embed input sequence
-            W_embed = self.add_weight(name="weights", shape=[1, self.input_dimension, self.input_embed], initializer=self.initializer)
-            embedded_input = tf.nn.conv1d(inputs, W_embed, 1, "VALID", name="embedded_input")
+            # Embed input sequence using the weights initialized in `build()`
+            embedded_input = tf.nn.conv1d(inputs, self.W_embed, 1, "VALID", name="embedded_input")
             
             # Batch Normalization
             enc = tf.keras.layers.BatchNormalization(axis=2, training=self.is_training, name='layer_norm')(embedded_input)
@@ -97,3 +106,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
 
         # Return the output activations [Batch size, Sequence Length, Num_neurons] as tensors.
         return enc
+
+    def compute_output_shape(self, input_shape):
+        # Compute the output shape. This is required for custom layers in Keras.
+        return (input_shape[0], input_shape[1], self.input_embed)
