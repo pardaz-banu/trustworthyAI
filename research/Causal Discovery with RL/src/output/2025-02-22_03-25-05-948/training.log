@@ -1,0 +1,20 @@
+2025-02-22 03:25:05,948 INFO - helpers.log_helper - Completed configuring logger.
+2025-02-22 03:25:05,949 INFO - __main__ - Python version is 3.12.7
+2025-02-22 03:25:05,949 INFO - __main__ - Current commit of code: ___
+2025-02-22 03:25:05,950 INFO - __main__ - Configuration parameters: {'encoder_type': 'TransformerEncoder', 'hidden_dim': 64, 'num_heads': 16, 'num_stacks': 6, 'residual': False, 'decoder_type': 'SingleLayerDecoder', 'decoder_activation': 'tanh', 'decoder_hidden_dim': 16, 'use_bias': False, 'use_bias_constant': False, 'bias_initial_value': False, 'batch_size': 64, 'input_dimension': 64, 'max_length': 12, 'data_size': 5000, 'read_data': True, 'data_path': 'input_data_path', 'normalize': False, 'transpose': True, 'score_type': 'BIC', 'reg_type': 'LR', 'lambda_iter_num': 1000, 'lambda_flag_default': True, 'score_bd_tight': True, 'lambda1_update': 1, 'lambda2_update': 10, 'score_lower': 0.0, 'score_upper': 0.0, 'lambda2_lower': -1, 'lambda2_upper': -1, 'seed': 8, 'nb_epoch': 20000, 'lr1_start': 0.001, 'lr1_decay_step': 5000, 'lr1_decay_rate': 0.96, 'alpha': 0.99, 'init_baseline': -1.0, 'temperature': 3.0, 'C': 10.0, 'l1_graph_reg': 0.0, 'inference_mode': True, 'restore_model': False, 'save_to': '20/model', 'restore_from': '20/model', 'log_dir': 'summary/20/repo', 'verbose': False, 'save_model_path': 'output/2025-02-22_03-25-05-948/model', 'summary_dir': 'output/2025-02-22_03-25-05-948/summary', 'plot_dir': 'output/2025-02-22_03-25-05-948/plot', 'graph_dir': 'output/2025-02-22_03-25-05-948/graph'}
+2025-02-22 03:25:05,950 CRITICAL - helpers.log_helper - Unhandled exception
+Traceback (most recent call last):
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/main.py", line 317, in <module>
+    main()
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/main.py", line 75, in main
+    training_set = DataGenerator_read_data(file_path, solution_path, config.normalize, config.transpose)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/pardazbanumohammad/trustworthyAI/research/Causal Discovery with RL/src/data_loader/dataset_read_data.py", line 15, in __init__
+    self.inputdata = np.load(file_path)
+                     ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/numpy/lib/npyio.py", line 427, in load
+    fid = stack.enter_context(open(os_fspath(file), "rb"))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'input_data_path/data.npy'
+2025-02-22 03:25:06,041 INFO - rpy2.rinterface_lib.embedded - Embedded R ended.
+2025-02-22 03:25:06,042 INFO - rpy2.rinterface_lib.embedded - Embedded R already ended.

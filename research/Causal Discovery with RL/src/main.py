@@ -70,8 +70,8 @@ def main():
     
     if config.read_data:
         print("file path: ", config.read_data)
-        file_path = '{}/data.npy'.format(config.data_path)
-        solution_path = '{}/DAG.npy'.format(config.data_path)
+        file_path = './synthetic_datasets/exp1_12nodes/gauss_diff_noise/1/data.npy'.format(config.data_path)
+        solution_path = './synthetic_datasets/exp1_12nodes/gauss_diff_noise/1/DAG.npy'.format(config.data_path)
         training_set = DataGenerator_read_data(file_path, solution_path, config.normalize, config.transpose)
     else:
         raise ValueError("Only support importing data from existing files")
